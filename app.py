@@ -1,6 +1,4 @@
 import streamlit as st
-import kagglehub
-from kagglehub import KaggleDatasetAdapter
 import pandas as pd
 import numpy as np
 import pickle
@@ -15,11 +13,10 @@ with open("model1.pkl", "rb") as f:
 # TITLE
 # -----------------------------
 st.title("🌱 Smart Agriculture Prediction App")
-
 st.write("Enter input values to predict output")
 
 # -----------------------------
-# USER INPUT (AUTO FROM COLUMNS)
+# USER INPUT
 # -----------------------------
 user_input = []
 
@@ -49,14 +46,13 @@ if st.button("Predict"):
         st.error(f"Error: {e}")
 
 # -----------------------------
-# OPTIONAL: SHOW DATASET
+# SHOW DATASET (LOCAL FILE)
 # -----------------------------
 st.subheader("Dataset Preview")
 
 if st.button("Show Dataset"):
-    df = kagglehub.load_dataset(
-        KaggleDatasetAdapter.PANDAS,
-        "wisam1985/advanced-iot-agriculture-2024",
-        "Advanced_IoT_Dataset.csv"
-    )
-    st.dataframe(df.head())
+    try:
+        df = pd.read_csv("Advanced_IoT_Dataset.csv")
+        st.dataframe(df.head())
+    except:
+        st.error("Dataset file not found. Please upload it to repo.")
