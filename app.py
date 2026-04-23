@@ -1,4 +1,4 @@
- import streamlit as st
+import streamlit as st
 import kagglehub
 from kagglehub import KaggleDatasetAdapter
 import pandas as pd
