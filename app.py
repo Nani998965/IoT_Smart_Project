@@ -4,10 +4,46 @@ import numpy as np
 import pickle
 
 # -----------------------------
-# LOAD MODEL
+# LOAD MODEL SAFELY
 # -----------------------------
-with open("model1.pkl", "rb") as f:
-    model, scaler, le, columns = pickle.load(f)
+try:
+    with open("model1.pkl", "rb") as f:
+        data = pickle.load(f)
+
+    # Handle different formats
+    if isinstance(data, dict):
+        model = data.get("model")
+        scaler = data.get("scaler")
+        le = data.get("label_encoder")
+        columns = data.get("columns")
+
+    elif isinstance(data, tuple):
+        if len(data) == 4:
+            model, scaler, le, columns = data
+        elif len(data) == 2:
+            model, scaler = data
+            le = None
+            columns = None
+        else:
+            model = data[0]
+            scaler = None
+            le = None
+            columns = None
+    else:
+        model = data
+        scaler = None
+        le = None
+        columns = None
+
+except Exception as e:
+    st.error(f"Error loading model: {e}")
+    st.stop()
+
+# -----------------------------
+# DEFAULT COLUMNS (if missing)
+# -----------------------------
+if columns is None:
+    columns = ["N", "P", "K", "temperature", "humidity", "ph", "rainfall"]
 
 # -----------------------------
 # TITLE
@@ -31,22 +67,24 @@ if st.button("Predict"):
     try:
         input_data = pd.DataFrame([user_input], columns=columns)
 
-        # Scale input
-        input_scaled = scaler.transform(input_data)
+        # Apply scaling if available
+        if scaler is not None:
+            input_data = scaler.transform(input_data)
 
         # Predict
-        prediction = model.predict(input_scaled)
+        prediction = model.predict(input_data)
 
-        # Decode label
-        result = le.inverse_transform(prediction)
+        # Decode if label encoder exists
+        if le is not None:
+            prediction = le.inverse_transform(prediction)
 
-        st.success(f"Prediction: {result[0]}")
+        st.success(f"Prediction: {prediction[0]}")
 
     except Exception as e:
-        st.error(f"Error: {e}")
+        st.error(f"Prediction error: {e}")
 
 # -----------------------------
-# SHOW DATASET (LOCAL FILE)
+# SHOW DATASET
 # -----------------------------
 st.subheader("Dataset Preview")
 
@@ -54,5 +92,5 @@ if st.button("Show Dataset"):
     try:
         df = pd.read_csv("Advanced_IoT_Dataset.csv")
         st.dataframe(df.head())
-    except:
-        st.error("Dataset file not found. Please upload it to repo.")
+    except Exception as e:
+        st.error(f"Dataset error: {e}")
